@@ -1,22 +1,27 @@
-# Maven
-# Build your Java project and run tests with Apache Maven.
-# Add steps that analyze code, save build artifacts, deploy, and more:
-# https://docs.microsoft.com/azure/devops/pipelines/languages/java
-
 trigger:
-- main
-
-pool:
-  vmImage: ubuntu-latest
-
-steps:
-- task: Maven@3
-  inputs:
-    mavenPomFile: 'pom.xml'
-    mavenOptions: '-Xmx3072m'
-    javaHomeOption: 'JDKVersion'
-    jdkVersionOption: '1.8'
-    jdkArchitectureOption: 'x64'
-    publishJUnitResults: true
-    testResultsFiles: '**/surefire-reports/TEST-*.xml'
-    goals: 'package'
+  branches:
+    include:
+    - refs/heads/master
+name: $(date:yyyyMMdd)$(rev:.rr)
+jobs:
+- job: Phase_1
+  displayName: Build Push Image
+  cancelTimeoutInMinutes: 1
+  pool:
+    vmImage: ubuntu-20.04
+  steps:
+  - checkout: self
+  - task: SonarQubePrepare@4
+    displayName: Prepare analysis on SonarQube
+    inputs:
+      SonarQube: 11111111-1111-1111-1111-11111111
+      projectKey: aplicacao-teste
+      projectName: Aplicação Teste
+  - task: DotNetCoreCLI@2
+    displayName: dotnet build
+    inputs:
+      projects: '**/*.csproj'
+  - task: SonarQubeAnalyze@4
+    displayName: Run Code Analysis
+  - task: SonarQubePublish@4
+    displayName: Publish Quality Gate Result
